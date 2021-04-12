@@ -9,6 +9,7 @@ library(readxl) # to read in excel spreadsheets
 library(glm) # use to run generalized linear models
 library(prism) # package for downloading PRISM climate data
 library(raster) # working with raster data to get climate data out of PRISM
+library(reshape) #for data manipulation
 ################################################################################
 ##### Load Data ################################################################
 ################################################################################
@@ -60,10 +61,10 @@ endo_scores <-
 ################################################################################
 ##### Pulling in climate data ##################################################
 ################################################################################
-# this downloads a raster file for 30-year normal climate for may for precipitation and temperature
+# this downloads a raster file for 30-year normal climate for precipitation and temperature
 # you can use other commands, like get_prism_annual to get annual or monthly data from PRISM
-get_prism_normals(type="ppt",resolution = "800m",mon = 5, keepZip=FALSE) # you can set the prism path to whatever, but I wrote in "~/prism_normals"
-get_prism_normals(type="tmean",resolution = "800m",mon = 5, keepZip=FALSE)
+get_prism_normals(type="ppt",resolution = "800m",mon = 1, keepZip=FALSE) 
+get_prism_normals(type="tmean",resolution = "800m",mon = 1, keepZip=FALSE)
 
 ls_prism_data(name = TRUE)
 
@@ -79,11 +80,13 @@ climate_crs <- climate_data@crs@projargs
 # This takes a while, so uncomment following lines and then you should save the output as an R data object
 
 point_df <- data.frame(rasterToPoints(climate_data)) ##creates a dataframe of points (This step takes a bit of time)
-year.df <- melt(point_df, c("x", "y")) %>%
-  separate(variable, into = c("PRISM", "Variable", "Label", "Resolution", "Year", "file")) %>%
-  rename("lon" = "x", "lat" = "y")
-saveRDS(year.df, file = "PRISM_climate_year_df.Rda")
+year.df <- melt(point_df, c("x", "y")) %>% # This makes the data frame "long: so the temp and ppt values are in one column
+  separate(variable, into = c("PRISM", "Variable", "Year", "Normal", "Resolution", "Month", "file")) %>% # this is separating the big file name variable into different columns.
+  dplyr::rename("lon" = "x", "lat" = "y")
 
-year.df <- readRDS(file = "PRISM_climate_year_df.Rda")
+#Now we can save this dataframe so we can just load it in the future and use it again without redownloading the data
+saveRDS(year.df, file = "PRISM_climate_normal_df.Rda")
+
+year.df <- readRDS(file = "PRISM_climate_normal_df.Rda")
 
 
