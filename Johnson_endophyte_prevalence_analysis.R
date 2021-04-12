@@ -6,7 +6,9 @@
 # At the start of the script, we load in R packages that we use for loading data, running statistical models, and plotting our results
 library(tidyverse) # has nice functions for data manipulation and visualization
 library(readxl) # to read in excel spreadsheets
-
+library(glm) # use to run generalized linear models
+library(prism) # package for downloading PRISM climate data
+library(raster) # working with raster data to get climate data out of PRISM
 ################################################################################
 ##### Load Data ################################################################
 ################################################################################
@@ -30,3 +32,58 @@ locations_2020 <- read_excel(path = "Endophyte_field_collections_2020.xlsx", she
 colnames(scores_2018)
 colnames(scores_2019)
 colnames(scores_2020)
+
+endo_scores <- 
+
+################################################################################
+##### Run generalized linear model for longitude ###############################
+################################################################################
+# Here we can run a model to test for the effect of longitude on endophyte prevalence
+# We can also use AIC to help choose our model
+# It's good to start by visualizing our data in general, so let's start with a histogram of scores or maybe a map of our locations
+
+
+
+
+
+
+
+
+
+################################################################################
+##### Plot model estimates #####################################################
+################################################################################
+
+
+
+
+################################################################################
+##### Pulling in climate data ##################################################
+################################################################################
+# this downloads a raster file for 30-year normal climate for may for precipitation and temperature
+# you can use other commands, like get_prism_annual to get annual or monthly data from PRISM
+get_prism_normals(type="ppt",resolution = "800m",mon = 5, keepZip=FALSE) # you can set the prism path to whatever, but I wrote in "~/prism_normals"
+get_prism_normals(type="tmean",resolution = "800m",mon = 5, keepZip=FALSE)
+
+ls_prism_data(name = TRUE)
+
+# Grab the prism data and compile the files
+climate_data <- ls_prism_data() %>%   
+  prism_stack(.)  
+
+# Extract projection coordinates from raster stack
+climate_crs <- climate_data@crs@projargs
+
+
+# Now we will extract the climate data from the raster files and save to a dataframe.
+# This takes a while, so uncomment following lines and then you should save the output as an R data object
+
+point_df <- data.frame(rasterToPoints(climate_data)) ##creates a dataframe of points (This step takes a bit of time)
+year.df <- melt(point_df, c("x", "y")) %>%
+  separate(variable, into = c("PRISM", "Variable", "Label", "Resolution", "Year", "file")) %>%
+  rename("lon" = "x", "lat" = "y")
+saveRDS(year.df, file = "PRISM_climate_year_df.Rda")
+
+year.df <- readRDS(file = "PRISM_climate_year_df.Rda")
+
+
